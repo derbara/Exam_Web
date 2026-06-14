@@ -1,7 +1,7 @@
 import hashlib
 import os
 
-from flask import (
+from flask import ( # Импортируем необходимые функции и классы из Flask и других модулей для работы с маршрутами, шаблонами, сессиями и базой данных
     Blueprint,
     current_app,
     flash,
@@ -20,11 +20,11 @@ from app.utils import allowed_file, delete_cover_file, get_current_user
 books_bp = Blueprint("books", __name__)
 
 
-def _get_genres():
+def _get_genres(): # Вспомогательная функция для получения списка всех жанров из базы данных, отсортированных по имени, возвращающая список объектов жанров
     return Genre.query.order_by(Genre.name).all()
 
 
-def _parse_book_form():
+def _parse_book_form(): # Вспомогательная функция для извлечения данных из формы добавления или редактирования книги, возвращающая словарь с данными книги, включая список выбранных жанров
     return {
         "title": request.form.get("title", "").strip(),
         "short_description": request.form.get("short_description", "").strip(),
@@ -36,7 +36,7 @@ def _parse_book_form():
     }
 
 
-def _validate_book_form(data, require_cover=False):
+def _validate_book_form(data, require_cover=False): # Вспомогательная функция для проверки корректности данных из формы книги, возвращающая список полей с ошибками, проверяя обязательные поля, числовые значения и наличие файла обложки при необходимости
     errors = []
     if not data["title"]:
         errors.append("title")
@@ -64,16 +64,16 @@ def _validate_book_form(data, require_cover=False):
     return errors
 
 
-def _save_book_genres(book, genre_ids):
+def _save_book_genres(book, genre_ids): # Вспомогательная функция для сохранения связей между книгой и жанрами, обновляя список жанров книги на основе переданных идентификаторов жанров
     book.genres = Genre.query.filter(Genre.id.in_(genre_ids)).all()
 
 
-def _save_cover(book, cover_file):
+def _save_cover(book, cover_file): # Вспомогательная функция для сохранения файла обложки книги, вычисляющая MD5-хэш файла для проверки существования, сохраняющая файл с уникальным именем и возвращающая данные о сохраненной обложке
     file_data = cover_file.read()
     md5_hash = hashlib.md5(file_data).hexdigest()
     mime_type = cover_file.mimetype or "application/octet-stream"
 
-    existing = Cover.query.filter_by(md5_hash=md5_hash).first()
+    existing = Cover.query.filter_by(md5_hash=md5_hash).first() # Проверяем, существует ли уже обложка с таким же MD5-хэшем, чтобы избежать дублирования файлов, и если существует, связываем книгу с существующей обложкой
     if existing:
         cover = Cover(filename=existing.filename, mime_type=existing.mime_type, md5_hash=md5_hash, book=book)
         db.session.add(cover)
@@ -89,7 +89,7 @@ def _save_cover(book, cover_file):
     return cover.id, filename, file_data
 
 
-@books_bp.route("/")
+@books_bp.route("/") # Маршрут для главной страницы, отображающий список книг с пагинацией, сортировкой по году и ID, а также передачей данных о текущем пользователе в шаблон
 def index():
     page = request.args.get("page", 1, type=int)
     per_page = current_app.config["BOOKS_PER_PAGE"]
@@ -118,7 +118,7 @@ def index():
     )
 
 
-@books_bp.route("/books/add", methods=["GET", "POST"])
+@books_bp.route("/books/add", methods=["GET", "POST"]) # Маршрут для страницы добавления книги, доступный только администраторам, обрабатывающий как GET-запросы для отображения формы, так и POST-запросы для сохранения новой книги с проверкой данных и загрузкой обложки
 @admin_required
 def add():
     genres = _get_genres()
@@ -143,7 +143,7 @@ def add():
         file_data = None
         filename = None
 
-        try:
+        try: # Создаем новый объект книги с данными из формы, сохраняем его в базе данных, устанавливаем связи с жанрами и обложкой, и коммитим транзакцию, с обработкой ошибок и откатом при неудаче
             book = Book(
                 title=form_data["title"],
                 short_description=sanitized_description,
@@ -170,7 +170,7 @@ def add():
                 form_data=form_data,
                 is_edit=False,
             )
-        if file_data and filename:
+        if file_data and filename: # Если файл обложки был сохранен, сохраняем его на диск в папке загрузок, используя безопасное имя файла и обрабатывая возможные ошибки при сохранении
             upload_path = os.path.join(
                 current_app.config["UPLOAD_FOLDER"], filename
             )
@@ -180,7 +180,7 @@ def add():
         flash("Книга успешно добавлена.", "success")
         return redirect(url_for("books.view", book_id=book_id))
 
-    return render_template(
+    return render_template( # При GET-запросе отображаем страницу добавления книги с формой и списком жанров, передавая данные о форме и флаге редактирования в шаблон
         "books/add.html",
         genres=genres,
         form_data=form_data,
@@ -188,9 +188,9 @@ def add():
     )
 
 
-@books_bp.route("/books/<int:book_id>/edit", methods=["GET", "POST"])
+@books_bp.route("/books/<int:book_id>/edit", methods=["GET", "POST"]) # Маршрут для страницы редактирования книги, доступный администраторам и редакторам, обрабатывающий как GET-запросы для отображения формы с текущими данными книги, так и POST-запросы для сохранения изменений с проверкой данных и обновлением обложки при необходимости
 @editor_required
-def edit(book_id):
+def edit(book_id): # Получаем книгу по ID из базы данных, проверяем ее существование, извлекаем текущие данные для отображения в форме, обрабатываем POST-запросы для сохранения изменений с проверкой данных и обновлением связей с жанрами, и отображаем страницу редактирования с формой и данными книги
     book = Book.query.get(book_id)
     if not book:
         flash("Книга не найдена.", "warning")
@@ -198,7 +198,7 @@ def edit(book_id):
 
     selected_genres = [genre.id for genre in book.genres]
 
-    genres = _get_genres()
+    genres = _get_genres() # Получаем список всех жанров для отображения в форме, а также формируем данные для текущей книги, которые будут использоваться для заполнения полей формы при GET-запросе и для проверки при POST-запросе
     form_data = _parse_book_form() if request.method == "POST" else {
         "title": book.title,
         "short_description": book.short_description,
@@ -224,7 +224,7 @@ def edit(book_id):
                 is_edit=True,
             )
 
-        sanitized_description = sanitize_markdown(form_data["short_description"])
+        sanitized_description = sanitize_markdown(form_data["short_description"]) # Санитизируем описание книги, чтобы удалить потенциально опасные элементы, и сохраняем изменения в базе данных, с обработкой ошибок и откатом при неудаче
         try:
             book.title = form_data["title"]
             book.short_description = sanitized_description
@@ -262,7 +262,7 @@ def edit(book_id):
 
 @books_bp.route("/books/<int:book_id>/delete", methods=["POST"])
 @admin_required
-def delete(book_id):
+def delete(book_id): # Маршрут для удаления книги, доступный только администраторам, который удаляет книгу из базы данных, а также файл обложки, если он больше не используется другими книгами, с обработкой ошибок и отображением сообщений об успехе или неудаче
     book = Book.query.get(book_id)
     if not book:
         flash("Книга не найдена.", "warning")
@@ -289,7 +289,7 @@ def delete(book_id):
 
 
 @books_bp.route("/books/<int:book_id>")
-def view(book_id):
+def view(book_id): # Маршрут для страницы просмотра книги, который извлекает книгу по ID, проверяет ее существование, получает связанные данные (жанры, обложку, рецензии), а также данные о текущем пользователе и его рецензии и подборках, и отображает страницу с подробной информацией о книге
     book = Book.query.get(book_id)
     if not book:
         flash("Книга не найдена.", "warning")

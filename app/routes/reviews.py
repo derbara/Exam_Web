@@ -7,7 +7,7 @@ from app.utils import get_current_user
 
 reviews_bp = Blueprint("reviews", __name__)
 
-RATING_LABELS = {
+RATING_LABELS = { # Словарь для отображения текстовых меток рейтингов от 0 до 5, который будет использоваться в шаблонах для отображения понятных описаний рейтингов, выставленных пользователями в рецензиях
     5: "отлично",
     4: "хорошо",
     3: "удовлетворительно",
@@ -19,7 +19,7 @@ RATING_LABELS = {
 
 @reviews_bp.route("/books/<int:book_id>/reviews/add", methods=["GET", "POST"])
 @login_required
-def add(book_id):
+def add(book_id): # Маршрут для добавления рецензии на книгу, который обрабатывает как GET-запросы для отображения формы, так и POST-запросы для сохранения рецензии в базе данных, с проверкой прав доступа, существования книги, наличия уже оставленной рецензии, валидацией данных формы, санитизацией текста рецензии, и отображением сообщений об успехе или неудаче
     user = get_current_user()
     if user["role_name"] not in ("admin", "moderator", "user"):
         flash(
@@ -28,7 +28,7 @@ def add(book_id):
         )
         return redirect(url_for("books.index"))
 
-    book = Book.query.get(book_id)
+    book = Book.query.get(book_id) # Извлекаем книгу по ID, чтобы проверить ее существование и отобразить информацию о ней в форме добавления рецензии. Если книга не найдена, перенаправляем на главную страницу с предупреждением
     if not book:
         flash("Книга не найдена.", "warning")
         return redirect(url_for("books.index"))
@@ -91,7 +91,7 @@ def add(book_id):
         flash("Рецензия успешно добавлена.", "success")
         return redirect(url_for("books.view", book_id=book_id))
 
-    return render_template(
+    return render_template( # При GET-запросе отображаем форму добавления рецензии, передавая в шаблон информацию о книге, данные формы (которые будут пустыми при первом отображении) и словарь с метками рейтингов для отображения в форме
         "reviews/form.html",
         book=book,
         form_data=form_data,

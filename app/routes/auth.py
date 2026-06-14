@@ -7,8 +7,8 @@ from app.utils import get_current_user
 auth_bp = Blueprint("auth", __name__)
 
 
-@auth_bp.route("/login", methods=["GET", "POST"])
-def login():
+@auth_bp.route("/login", methods=["GET", "POST"]) # Маршрут для страницы входа, обрабатывающий как GET-запросы для отображения формы, так и POST-запросы для аутентификации пользователя
+def login(): # Функция для обработки логики входа пользователя, проверяющая введенные данные и устанавливающая сессию при успешной аутентификации, с перенаправлением на главную страницу или страницу, указанную в параметре "next"
     if get_current_user():
         return redirect(url_for("books.index"))
 
@@ -34,7 +34,7 @@ def login():
             "Невозможно аутентифицироваться с указанными логином и паролем",
             "danger",
         )
-        return render_template(
+        return render_template( # При неудачной аутентификации повторно отображаем страницу входа с сохранением введенного логина и состояния чекбокса "запомнить меня"
             "login.html",
             login_value=login_value,
             remember=remember,
@@ -43,7 +43,7 @@ def login():
     return render_template("login.html")
 
 
-@auth_bp.route("/logout")
+@auth_bp.route("/logout") # Маршрут для выхода из системы, который очищает сессию и перенаправляет пользователя на главную страницу или страницу, указанную в параметре "next"
 def logout():
     session.clear()
     next_page = request.args.get("next") or url_for("books.index")

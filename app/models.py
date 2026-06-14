@@ -6,21 +6,21 @@ from flask_sqlalchemy import SQLAlchemy
 db = SQLAlchemy()
 
 
-book_genres = db.Table(
+book_genres = db.Table( # Таблица для связи многие-ко-многим между книгами и жанрами
     "book_genres",
     db.Column("book_id", db.Integer, db.ForeignKey("books.id", ondelete="CASCADE"), primary_key=True),
     db.Column("genre_id", db.Integer, db.ForeignKey("genres.id", ondelete="CASCADE"), primary_key=True),
 )
 
 
-collection_books = db.Table(
+collection_books = db.Table( # Таблица для связи многие-ко-многим между подборками и книгами
     "collection_books",
     db.Column("collection_id", db.Integer, db.ForeignKey("collections.id", ondelete="CASCADE"), primary_key=True),
     db.Column("book_id", db.Integer, db.ForeignKey("books.id", ondelete="CASCADE"), primary_key=True),
 )
 
 
-class Role(db.Model):
+class Role(db.Model): # Модель для хранения ролей пользователей, таких как администратор, модератор и обычный пользователь
     __tablename__ = "roles"
 
     id = db.Column(db.Integer, primary_key=True)
@@ -33,7 +33,7 @@ class Role(db.Model):
         return self.name
 
 
-class User(db.Model):
+class User(db.Model): # Модель для хранения информации о пользователях, включая их логин, пароль, имя и роль
     __tablename__ = "users"
 
     id = db.Column(db.Integer, primary_key=True)
@@ -48,11 +48,11 @@ class User(db.Model):
     reviews = db.relationship("Review", back_populates="user", cascade="all, delete-orphan")
     collections = db.relationship("Collection", back_populates="user", cascade="all, delete-orphan")
 
-    @property
+    @property # Свойство для получения названия роли пользователя, возвращающее None, если роль не установлена
     def role_name(self):
         return self.role.name if self.role else None
 
-    @property
+    @property # Свойство для получения полного имени пользователя, объединяющее фамилию, имя и отчество (если есть)
     def full_name(self):
         parts = [self.last_name, self.first_name]
         if self.middle_name:
@@ -63,7 +63,7 @@ class User(db.Model):
         return self.login
 
 
-class Genre(db.Model):
+class Genre(db.Model): # Модель для хранения жанров книг, таких как роман, фантастика, детектив и т.д., с уникальным названием
     __tablename__ = "genres"
 
     id = db.Column(db.Integer, primary_key=True)
@@ -73,7 +73,7 @@ class Genre(db.Model):
         return self.name
 
 
-class Book(db.Model):
+class Book(db.Model): # Модель для хранения информации о книгах, включая название, описание, год издания, издателя, автора и количество страниц, а также связи с жанрами, обложкой, рецензиями и подборками
     __tablename__ = "books"
 
     id = db.Column(db.Integer, primary_key=True)
@@ -84,7 +84,7 @@ class Book(db.Model):
     author = db.Column(db.String(255), nullable=False)
     pages_volume = db.Column(db.Integer, nullable=False)
 
-    genres = db.relationship(
+    genres = db.relationship( # Связь многие-ко-многим с жанрами через вспомогательную таблицу book_genres, с ленивой загрузкой и обратной ссылкой для получения книг из жанра
         "Genre",
         secondary=book_genres,
         lazy="select",
@@ -92,29 +92,29 @@ class Book(db.Model):
     )
     cover = db.relationship("Cover", uselist=False, back_populates="book", cascade="all, delete-orphan")
     reviews = db.relationship("Review", back_populates="book", cascade="all, delete-orphan")
-    collections = db.relationship(
+    collections = db.relationship( # Связь многие-ко-многим с подборками через вспомогательную таблицу collection_books, с ленивой загрузкой и обратной ссылкой для получения книг из подборки
         "Collection",
         secondary=collection_books,
         back_populates="books",
         lazy="select",
     )
 
-    @property
+    @property # Свойство для получения количества рецензий на книгу, возвращающее 0, если рецензий нет
     def review_count(self):
         return len(self.reviews)
 
-    @property
+    @property # Свойство для получения средней оценки книги, возвращающее 0, если рецензий нет, и округляющее результат до одного десятичного знака
     def avg_rating(self):
         if not self.reviews:
             return 0
         return round(sum(review.rating for review in self.reviews) / len(self.reviews), 1)
 
-    @property
+    @property # Свойство для получения строки с названиями жанров книги, отсортированными по алфавиту и разделенными запятыми
     def genre_names(self):
         return ", ".join(genre.name for genre in sorted(self.genres, key=lambda g: g.name))
 
 
-class Cover(db.Model):
+class Cover(db.Model): # Модель для хранения информации об обложках книг, включая имя файла, MIME-тип, MD5-хэш и связь с книгой, для обеспечения уникальности обложки на книгу и каскадного удаления при удалении книги
     __tablename__ = "covers"
 
     id = db.Column(db.Integer, primary_key=True)
@@ -126,7 +126,7 @@ class Cover(db.Model):
     book = db.relationship("Book", back_populates="cover")
 
 
-class Review(db.Model):
+class Review(db.Model): # Модель для хранения информации о рецензиях на книги, включая связь с книгой и пользователем, оценку, текст рецензии и дату создания, с каскадным удалением при удалении книги или пользователя
     __tablename__ = "reviews"
 
     id = db.Column(db.Integer, primary_key=True)
@@ -139,19 +139,19 @@ class Review(db.Model):
     book = db.relationship("Book", back_populates="reviews")
     user = db.relationship("User", back_populates="reviews")
 
-    @property
+    @property # Свойство для получения полного имени автора рецензии, возвращающее пустую строку, если пользователь не найден (например, если пользователь удален)
     def author_name(self):
         return self.user.full_name if self.user else ""
 
 
-class Collection(db.Model):
+class Collection(db.Model): # Модель для хранения информации о подборках книг, включая название, связь с пользователем и книгами, с каскадным удалением при удалении пользователя и возможностью иметь несколько книг в одной подборке
     __tablename__ = "collections"
 
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String(255), nullable=False)
     user_id = db.Column(db.Integer, db.ForeignKey("users.id", ondelete="CASCADE"), nullable=False)
 
-    user = db.relationship("User", back_populates="collections")
+    user = db.relationship("User", back_populates="collections") # Связь с пользователем, которому принадлежит подборка, с каскадным удалением при удалении пользователя
     books = db.relationship(
         "Book",
         secondary=collection_books,

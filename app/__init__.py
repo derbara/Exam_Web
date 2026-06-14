@@ -13,7 +13,7 @@ from app.config import Config
 from app.models import db
 
 
-@event.listens_for(Engine, "connect")
+@event.listens_for(Engine, "connect") # Включаем поддержку внешних ключей для SQLite
 def set_sqlite_pragma(dbapi_connection, connection_record):
     if isinstance(dbapi_connection, sqlite3.Connection):
         cursor = dbapi_connection.cursor()
@@ -21,14 +21,14 @@ def set_sqlite_pragma(dbapi_connection, connection_record):
         cursor.close()
 
 
-def create_app(config_class=Config):
+def create_app(config_class=Config): # Функция для создания экземпляра приложения Flask
     app = Flask(__name__)
     app.config.from_object(config_class)
     app.permanent_session_lifetime = timedelta(days=30)
 
     db.init_app(app)
 
-    upload_dir = app.config["UPLOAD_FOLDER"]
+    upload_dir = app.config["UPLOAD_FOLDER"] # Создаем папку для загрузки файлов, если она не существует
     os.makedirs(upload_dir, exist_ok=True)
 
     from app.routes.auth import auth_bp
@@ -36,16 +36,16 @@ def create_app(config_class=Config):
     from app.routes.collections import collections_bp
     from app.routes.reviews import reviews_bp
 
-    app.register_blueprint(auth_bp)
+    app.register_blueprint(auth_bp) # Регистрируем блюпринты для разных частей приложения
     app.register_blueprint(books_bp)
     app.register_blueprint(reviews_bp)
     app.register_blueprint(collections_bp)
 
-    with app.app_context():
+    with app.app_context(): # Создаем все таблицы в базе данных и заполняем их начальными данными
         db.create_all()
         seed_initial_data()
 
-    @app.context_processor
+    @app.context_processor # Добавляем функцию для получения текущего пользователя в шаблоны
     def inject_user():
         from flask import session
 
@@ -56,10 +56,10 @@ def create_app(config_class=Config):
     return app
 
 
-def seed_initial_data():
+def seed_initial_data(): # Функция для заполнения базы данных начальными данными, если они отсутствуют
     from app.models import Book, Collection, Cover, Genre, Review, Role, User
 
-    if Role.query.count() == 0:
+    if Role.query.count() == 0: # Если в таблице ролей нет данных, добавляем стандартные роли
         roles = [
             Role(name="admin", description="Суперпользователь с полным доступом к системе"),
             Role(name="moderator", description="Может редактировать данные книг и модерировать рецензии"),
@@ -67,7 +67,7 @@ def seed_initial_data():
         ]
         db.session.add_all(roles)
 
-    if Genre.query.count() == 0:
+    if Genre.query.count() == 0: # Если в таблице жанров нет данных, добавляем стандартные жанры
         genres = [
             Genre(name="Роман"),
             Genre(name="Фантастика"),
@@ -80,7 +80,7 @@ def seed_initial_data():
         ]
         db.session.add_all(genres)
 
-    if User.query.count() == 0:
+    if User.query.count() == 0: # Если в таблице пользователей нет данных, добавляем демонстрационных пользователей с разными ролями
         admin_role = Role.query.filter_by(name="admin").first()
         moderator_role = Role.query.filter_by(name="moderator").first()
         user_role = Role.query.filter_by(name="user").first()
@@ -95,7 +95,7 @@ def seed_initial_data():
     db.session.commit()
 
 
-def sanitize_markdown(text):
+def sanitize_markdown(text): # Функция для безопасной обработки Markdown-текста, разрешающая только определенные теги и атрибуты
     if not text:
         return ""
     allowed_tags = bleach.sanitizer.ALLOWED_TAGS.union(
@@ -120,11 +120,11 @@ def sanitize_markdown(text):
             "hr",
         }
     )
-    allowed_attributes = {
+    allowed_attributes = { # Разрешаем только атрибуты href, title и rel для тегов <a>
         **bleach.sanitizer.ALLOWED_ATTRIBUTES,
         "a": ["href", "title", "rel"],
     }
-    return bleach.clean(
+    return bleach.clean( # Очищаем текст от нежелательных тегов и атрибутов, разрешая только безопасные
         text,
         tags=allowed_tags,
         attributes=allowed_attributes,
@@ -132,7 +132,7 @@ def sanitize_markdown(text):
     )
 
 
-def render_markdown(text):
+def render_markdown(text): # Функция для рендеринга Markdown-текста в HTML с безопасной обработкой и автоматической ссылкой
     sanitized = sanitize_markdown(text)
     html = markdown.markdown(
         sanitized,

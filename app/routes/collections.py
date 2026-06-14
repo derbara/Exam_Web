@@ -7,7 +7,7 @@ from app.utils import get_current_user
 collections_bp = Blueprint("collections", __name__)
 
 
-@collections_bp.route("/collections")
+@collections_bp.route("/collections") # Маршрут для страницы со списком подборок текущего пользователя, доступный всем аутентифицированным пользователям, который извлекает подборки из базы данных, считает количество книг в каждой подборке, и отображает страницу со списком подборок
 @regular_user_required
 def index():
     user = get_current_user()
@@ -22,7 +22,7 @@ def index():
     return render_template("collections/list.html", collections=collections)
 
 
-@collections_bp.route("/collections/add", methods=["POST"])
+@collections_bp.route("/collections/add", methods=["POST"]) # Маршрут для добавления новой подборки, доступный всем аутентифицированным пользователям, который обрабатывает POST-запросы с данными новой подборки, сохраняет ее в базе данных, и перенаправляет обратно на страницу со списком подборок с сообщением об успехе или неудаче
 @regular_user_required
 def add():
     user = get_current_user()
@@ -53,7 +53,7 @@ def add():
 
 @collections_bp.route("/collections/<int:collection_id>")
 @regular_user_required
-def view(collection_id):
+def view(collection_id): # Маршрут для страницы просмотра подборки, который извлекает подборку по ID, проверяет ее существование, получает связанные книги, и отображает страницу с подробной информацией о подборке
     user = get_current_user()
     collection = Collection.query.filter_by(id=collection_id, user_id=user["id"]).first()
     if not collection:
@@ -79,7 +79,7 @@ def view(collection_id):
 
 @collections_bp.route("/books/<int:book_id>/add-to-collection", methods=["POST"])
 @regular_user_required
-def add_book_to_collection(book_id):
+def add_book_to_collection(book_id): # Маршрут для добавления книги в подборку, который обрабатывает POST-запросы с ID книги и ID подборки, проверяет их существование и принадлежность к текущему пользователю, сохраняет связь между книгой и подборкой в базе данных, и перенаправляет обратно на страницу книги с сообщением об успехе или неудаче
     user = get_current_user()
     collection_id = request.form.get("collection_id")
 
