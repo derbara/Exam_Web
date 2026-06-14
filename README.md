@@ -11,6 +11,8 @@
 
 | Логин | Пароль | Роль |
 |-------|--------|------|
-| admin | password123 | admin |
-| moderator | password123 | moderator |
-| reader | password123 | user |
+| admin | password | admin |
+| moderator | password | moderator |
+| reader | password | user |
+
+## 3. Сайт доступен по адресу https://derbara.pythonanywhere.com/
