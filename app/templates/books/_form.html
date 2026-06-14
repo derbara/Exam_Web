@@ -1,0 +1,16 @@
+{% macro book_form(form_data, genres, is_edit=false) %}
+<div class="mb-3"><label for="title" class="form-label">Название *</label><input type="text" class="form-control" id="title" name="title" value="{{ form_data.title or '' }}" required></div>
+<div class="mb-3"><label for="author" class="form-label">Автор *</label><input type="text" class="form-control" id="author" name="author" value="{{ form_data.author or '' }}" required></div>
+<div class="row">
+<div class="col-md-4 mb-3"><label for="year" class="form-label">Год *</label><input type="number" class="form-control" id="year" name="year" value="{{ form_data.year or '' }}" min="1000" max="9999" required></div>
+<div class="col-md-4 mb-3"><label for="pages_volume" class="form-label">Объём (страниц) *</label><input type="number" class="form-control" id="pages_volume" name="pages_volume" value="{{ form_data.pages_volume or '' }}" min="1" required></div>
+<div class="col-md-4 mb-3"><label for="publisher" class="form-label">Издательство *</label><input type="text" class="form-control" id="publisher" name="publisher" value="{{ form_data.publisher or '' }}" required></div>
+</div>
+<div class="mb-3"><label for="genre_ids" class="form-label">Жанры *</label>
+<select class="form-select" id="genre_ids" name="genre_ids" multiple required size="5">
+{% for genre in genres %}<option value="{{ genre.id }}" {% if form_data.genre_ids and genre.id|string in form_data.genre_ids %}selected{% endif %}>{{ genre.name }}</option>{% endfor %}
+</select><div class="form-text">Удерживайте Ctrl (Cmd на Mac) для выбора нескольких жанров.</div></div>
+<div class="mb-3"><label for="short_description" class="form-label">Краткое описание (Markdown) *</label><textarea class="form-control" id="short_description" name="short_description" rows="8">{{ form_data.short_description or '' }}</textarea></div>
+{% if not is_edit %}<div class="mb-3"><label for="cover" class="form-label">Обложка *</label><input type="file" class="form-control" id="cover" name="cover" accept="image/*" required></div>{% endif %}
+<button type="submit" class="btn btn-primary">Сохранить</button><a href="{{ url_for('books.index') }}" class="btn btn-secondary">Отмена</a>
+{% endmacro %}

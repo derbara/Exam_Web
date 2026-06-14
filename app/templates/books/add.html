@@ -1,0 +1,9 @@
+{% extends "base.html" %}
+{% from "books/_form.html" import book_form %}
+{% block title %}Добавление книги — Электронная библиотека{% endblock %}
+{% block extra_css %}<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/easymde/dist/easymde.min.css">{% endblock %}
+{% block content %}<h1 class="mb-4">Добавление книги</h1><form method="POST" enctype="multipart/form-data">{{ book_form(form_data, genres, is_edit=false) }}</form>{% endblock %}
+{% block extra_js %}<script src="https://cdn.jsdelivr.net/npm/easymde/dist/easymde.min.js"></script><script>
+const easyMDE = new EasyMDE({element: document.getElementById('short_description'), spellChecker: false, status: false});
+document.querySelector('form').addEventListener('submit', () => easyMDE.codemirror.save());
+</script>{% endblock %}

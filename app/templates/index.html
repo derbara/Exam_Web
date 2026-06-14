@@ -1,0 +1,48 @@
+{% extends "base.html" %}
+{% block title %}Главная — Электронная библиотека{% endblock %}
+{% block content %}
+<h1 class="mb-4">Каталог книг</h1>
+{% if not books %}
+<div class="alert alert-info">Книги пока не добавлены.</div>
+{% else %}
+<div class="row g-4">
+{% for book in books %}
+<div class="col-md-6 col-lg-4">
+<div class="card h-100 shadow-sm"><div class="card-body">
+<h5 class="card-title">{{ book.title }}</h5>
+<p class="card-text text-muted mb-1"><strong>Автор:</strong> {{ book.author }}</p>
+<p class="card-text mb-1"><strong>Жанры:</strong> {% if book.genres %}{{ book.genre_names }}{% else %}—{% endif %}</p>
+<p class="card-text mb-1"><strong>Год:</strong> {{ book.year }}</p>
+<p class="card-text mb-2"><strong>Оценка:</strong> {% if book.review_count > 0 %}{{ '%.1f' | format(book.avg_rating) }} ({{ book.review_count }} рец.){% else %}нет оценок{% endif %}</p>
+<div class="btn-group" role="group">
+<a href="{{ url_for('books.view', book_id=book.id) }}" class="btn btn-outline-primary btn-sm"><i class="bi bi-eye"></i> Просмотр</a>
+{% if user and user.role_name in ['admin', 'moderator'] %}
+<a href="{{ url_for('books.edit', book_id=book.id) }}" class="btn btn-outline-secondary btn-sm"><i class="bi bi-pencil"></i></a>
+{% endif %}
+{% if user and user.role_name == 'admin' %}
+<button type="button" class="btn btn-outline-danger btn-sm" data-bs-toggle="modal" data-bs-target="#deleteModal{{ book.id }}"><i class="bi bi-trash"></i></button>
+{% endif %}
+</div></div></div></div>
+{% if user and user.role_name == 'admin' %}
+<div class="modal fade" id="deleteModal{{ book.id }}" tabindex="-1"><div class="modal-dialog"><div class="modal-content">
+<div class="modal-header"><h5 class="modal-title">Удаление книги</h5><button type="button" class="btn-close" data-bs-dismiss="modal"></button></div>
+<div class="modal-body">Вы уверены, что хотите удалить книгу «{{ book.title }}»?</div>
+<div class="modal-footer">
+<button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Нет</button>
+<form action="{{ url_for('books.delete', book_id=book.id) }}" method="POST" class="d-inline"><button type="submit" class="btn btn-danger">Да</button></form>
+</div></div></div></div>
+{% endif %}
+{% endfor %}
+</div>
+{% if total_pages > 1 %}
+<nav class="mt-4"><ul class="pagination justify-content-center">
+<li class="page-item {% if page <= 1 %}disabled{% endif %}"><a class="page-link" href="{{ url_for('books.index', page=page - 1) }}">Назад</a></li>
+{% for p in range(1, total_pages + 1) %}<li class="page-item {% if p == page %}active{% endif %}"><a class="page-link" href="{{ url_for('books.index', page=p) }}">{{ p }}</a></li>{% endfor %}
+<li class="page-item {% if page >= total_pages %}disabled{% endif %}"><a class="page-link" href="{{ url_for('books.index', page=page + 1) }}">Вперёд</a></li>
+</ul></nav>
+{% endif %}
+{% endif %}
+{% if user and user.role_name == 'admin' %}
+<div class="mt-4"><a href="{{ url_for('books.add') }}" class="btn btn-success"><i class="bi bi-plus-lg"></i> Добавить книгу</a></div>
+{% endif %}
+{% endblock %}

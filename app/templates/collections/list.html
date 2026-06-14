@@ -1,0 +1,18 @@
+{% extends "base.html" %}
+{% block title %}Мои подборки — Электронная библиотека{% endblock %}
+{% block content %}
+<h1 class="mb-4">Мои подборки</h1>
+{% if collections %}
+<table class="table table-striped"><thead><tr><th>Название</th><th>Количество книг</th><th></th></tr></thead><tbody>
+{% for collection in collections %}<tr><td>{{ collection.name }}</td><td>{{ collection.book_count }}</td>
+<td><a href="{{ url_for('collections.view', collection_id=collection.id) }}" class="btn btn-sm btn-outline-primary">Просмотр</a></td></tr>{% endfor %}
+</tbody></table>{% else %}<p class="text-muted">Подборок пока нет.</p>{% endif %}
+<button type="button" class="btn btn-success mt-3" data-bs-toggle="modal" data-bs-target="#newCollectionModal">Добавить подборку</button>
+<div class="modal fade" id="newCollectionModal" tabindex="-1"><div class="modal-dialog"><div class="modal-content">
+<div class="modal-header"><h5 class="modal-title">Новая подборка</h5><button type="button" class="btn-close" data-bs-dismiss="modal"></button></div>
+<form method="POST" action="{{ url_for('collections.add') }}"><div class="modal-body">
+<label for="name" class="form-label">Название подборки</label>
+<input type="text" class="form-control" id="name" name="name" required></div>
+<div class="modal-footer"><button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Отмена</button><button type="submit" class="btn btn-primary">Добавить</button></div></form>
+</div></div></div>
+{% endblock %}

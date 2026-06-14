@@ -1,0 +1,11 @@
+{% extends "base.html" %}
+{% block title %}{{ collection.name }} — Мои подборки{% endblock %}
+{% block content %}
+<h1 class="mb-4">{{ collection.name }}</h1>
+<a href="{{ url_for('collections.index') }}" class="btn btn-link ps-0 mb-3">&larr; К списку подборок</a>
+{% if books %}<div class="list-group">{% for book in books %}
+<a href="{{ url_for('books.view', book_id=book.id) }}" class="list-group-item list-group-item-action">
+<div class="d-flex w-100 justify-content-between"><h5 class="mb-1">{{ book.title }}</h5><small>{{ book.year }}</small></div>
+<p class="mb-1 text-muted">{{ book.author }}</p></a>{% endfor %}</div>
+{% else %}<p class="text-muted">В подборке пока нет книг.</p>{% endif %}
+{% endblock %}
